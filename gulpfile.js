@@ -1,52 +1,30 @@
-var gulp           = require('gulp'),
-		gutil          = require('gulp-util' ),
-		sass           = require('gulp-sass'),
-		browserSync    = require('browser-sync'),
-		concat         = require('gulp-concat'),
-		uglify         = require('gulp-uglify'),
-		cleanCSS       = require('gulp-clean-css'),
-		rename         = require('gulp-rename'),
-		autoprefixer   = require('gulp-autoprefixer'),
-		notify         = require("gulp-notify");
+var gulp      = require('gulp'), // Ïîäêëþ÷àåì Gulp
+    sass        = require('gulp-sass'), //Ïîäêëþ÷àåì Sass ïàêåò,
+    browserSync = require('browser-sync'); // Ïîäêëþ÷àåì Browser Sync
 
-// Сервер и автообновление страницы Browsersync
-gulp.task('browser-sync', function() {
-	browserSync({
-		server: {
-			baseDir: 'app'
-		},
-		notify: false,
-		// tunnel: true,
-		// tunnel: "projectmane", //Demonstration page: http://projectmane.localtunnel.me
-	});
+gulp.task('sass', function(){ // Ñîçäàåì òàñê Sass
+    return gulp.src('app/sass/**/*.sass') // Áåðåì èñòî÷íèê
+        .pipe(sass()) // Ïðåîáðàçóåì Sass â CSS ïîñðåäñòâîì gulp-sass
+        .pipe(gulp.dest('app/css')) // Âûãðóæàåì ðåçóëüòàòà â ïàïêó app/css
+        .pipe(browserSync.reload({stream: true})) // Îáíîâëÿåì CSS íà ñòðàíèöå ïðè èçìåíåíèè
 });
 
-// Минификация пользовательских скриптов проекта и JS библиотек в один файл
-gulp.task('js', function() {
-	return gulp.src([
-		'app/libs/jquery/dist/jquery.min.js',
-		'app/js/common.js', // Всегда в конце
-		])
-	.pipe(concat('scripts.min.js'))
-	.pipe(uglify()) // Минимизировать весь js (на выбор)
-	.pipe(gulp.dest('app/js'))
-	.pipe(browserSync.reload({stream: true}));
+gulp.task('code', function() {
+    return gulp.src('app/*.html')
+    .pipe(browserSync.reload({ stream: true }))
 });
 
-gulp.task('sass', function() {
-	return gulp.src('app/sass/**/*.sass')
-	.pipe(sass({outputStyle: 'expand'}).on("error", notify.onError()))
-	.pipe(rename({suffix: '.min', prefix : ''}))
-	.pipe(autoprefixer(['last 15 versions']))
-	.pipe(cleanCSS()) // Опционально, закомментировать при отладке
-	.pipe(gulp.dest('app/css'))
-	.pipe(browserSync.reload({stream: true}));
+gulp.task('browser-sync', function() { // Ñîçäàåì òàñê browser-sync
+    browserSync({ // Âûïîëíÿåì browserSync
+        server: { // Îïðåäåëÿåì ïàðàìåòðû ñåðâåðà
+            baseDir: 'app' // Äèðåêòîðèÿ äëÿ ñåðâåðà - app
+        },
+        notify: false // Îòêëþ÷àåì óâåäîìëåíèÿ
+    });
 });
 
-gulp.task('watch', ['sass', 'js', 'browser-sync'], function() {
-	gulp.watch('app/sass/**/*.sass', ['sass']);
-	gulp.watch(['libs/**/*.js', 'app/js/common.js'], ['js']);
-	gulp.watch('app/*.html', browserSync.reload);
+gulp.task('watch', function() {
+    gulp.watch('app/sass/**/*.sass', gulp.parallel('sass')); // Íàáëþäåíèå çà sass ôàéëàìè
+    gulp.watch('app/*.html', gulp.parallel('code')); // Наблюдение за HTML файлами в корне проекта
 });
-
-gulp.task('default', ['watch']);
+gulp.task('default', gulp.parallel('sass', 'browser-sync', 'watch'));
